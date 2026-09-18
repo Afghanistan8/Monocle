@@ -120,16 +120,9 @@ pip install ./sdk/python
 pytest sdk/python/tests -p no:gltest
 ```
 
-Run every check at once:
-
-```bash
-npm run ci
-```
-
-That runs genvm-lint on all three contracts, gltest direct, gltest integration (which skips
-without a node), the Python SDK tests, the TypeScript typecheck, and the TypeScript SDK tests.
-The same steps are defined in `.github/workflows/ci.yml`, which is currently manual-only
-(`workflow_dispatch`); restore the `push` / `pull_request` triggers there to run it on every push.
+The GitHub Actions workflow (`.github/workflows/ci.yml`) defines the same checks. It is currently
+manual-only (`workflow_dispatch`); restore the `push` / `pull_request` triggers there to run it on
+every push.
 
 ## Deploy to Studio Next
 

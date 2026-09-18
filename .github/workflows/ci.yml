@@ -1,8 +1,8 @@
 name: CI
 
 # Manual-only for now: the hosting account cannot start Actions runners, so
-# automatic runs fail before any step executes. Run the same checks locally
-# with `npm run ci`. To restore automatic runs, add back:
+# automatic runs fail before any step executes.
+# To restore automatic runs, add back:
 #   push:         { branches: [main, master] }
 #   pull_request: { branches: [main, master] }
 on:
