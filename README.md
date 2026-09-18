@@ -50,7 +50,7 @@ See [docs/AUDIT.md](docs/AUDIT.md).
 
 ```
 contracts/          Monocle.py (engine + in-process MonocleVault ledger), MonocleFactory.py, MonocleReputation.py
-tests/direct/       204 gltest direct-mode tests + glsim multi-contract system tests
+tests/direct/       206 gltest direct-mode tests + glsim multi-contract system tests
 tests/integration/  real-node lifecycle (skips cleanly without a node)
 deploy/             001_deploy_monocle_system.ts, networks.ts (Studio Next default)
 sdk/typescript/     @monocle/sdk: clients, strict finality, typed calls
@@ -85,7 +85,7 @@ genvm-lint check contracts/MonocleFactory.py
 genvm-lint check contracts/MonocleReputation.py
 ```
 
-Run the direct-mode suite (204 tests, about 30 s; `GENVM_VERSION=v0.6.0-rc5` is pinned):
+Run the direct-mode suite (206 tests, about 30 s; `GENVM_VERSION=v0.6.0-rc5` is pinned):
 
 ```bash
 gltest tests/direct -v

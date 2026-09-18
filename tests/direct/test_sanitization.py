@@ -75,6 +75,26 @@ def test_parse_json_object_handles_prose_fences_and_trailing_commas(mod):
     assert mod._parse_json_object(None) == {}
 
 
+def test_parse_json_object_is_string_aware_and_skips_non_objects(mod):
+    # A ",}" inside a quoted value is content, not a trailing comma.
+    assert mod._parse_json_object('{"note": "a,}b", "x": [1,],}') == {"note": "a,}b", "x": [1]}
+    # A stray brace in prose before the real object is skipped.
+    assert mod._parse_json_object('see {not json} then {"winner_id": "1-0"}') == {"winner_id": "1-0"}
+    # The first complete object wins; trailing prose with braces is ignored.
+    assert mod._parse_json_object('{"a": "1"} and later {"a": "2"}') == {"a": "1"}
+
+
+def test_consensus_now_accepts_naive_and_zulu_timestamps(mod):
+    raw = sys.modules["genlayer.message"].raw
+    saved = raw["datetime"]
+    try:
+        for stamp in ("2030-01-01T00:00:00Z", "2030-01-01T00:00:00+00:00", "2030-01-01T00:00:00", "2030-01-01T00:00:00.5z"):
+            raw["datetime"] = stamp
+            assert mod._consensus_now() == 1893456000, stamp
+    finally:
+        raw["datetime"] = saved
+
+
 def test_stringify_confidence_is_always_a_clamped_decimal_string(mod):
     cases = [
         (0.85, "0.85"), ("0.85", "0.85"), (1, "1.0"), (1.4, "1.0"), ("-3", "0.0"), ("abc", "0.0"),

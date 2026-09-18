@@ -10,7 +10,7 @@ surface of MONOCLE's own features. Each finding names:
 Status of the pass:
 
 * `genvm-lint check` is clean on all three contracts.
-* `gltest tests/direct`: **204 passed**.
+* `gltest tests/direct`: **206 passed**.
 * SDK unit tests: **9 TypeScript, 5 Python**, all passing.
 
 ## A. Known GenLayer failure classes
@@ -139,7 +139,7 @@ one (see [LIMITATIONS.md](LIMITATIONS.md)).
 
 ### B3. Prompt injection via claims JSON and web content
 Structural fences come first:
-* four tagged blocks, each labelled DATA, NOT INSTRUCTIONS;
+* four tagged blocks, each opening with an UNTRUSTED CONTENT label;
 * fence tags occur exactly once each;
 * the preamble names the blocks without angle brackets.
 

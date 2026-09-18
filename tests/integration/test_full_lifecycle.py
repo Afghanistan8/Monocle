@@ -31,7 +31,7 @@ FACTORY_PATH = CONTRACTS / "MonocleFactory.py"
 REPUTATION_PATH = CONTRACTS / "MonocleReputation.py"
 
 # Stable, verifiable pages.
-SOURCES = ["https://en.wikipedia.org/wiki/2_%2B_2", "https://simple.wikipedia.org/wiki/2_%2B_2"]
+SOURCES = ["https://en.wikipedia.org/wiki/Speed_of_light", "https://simple.wikipedia.org/wiki/Speed_of_light"]
 HEAVY_ROTATIONS = 6
 
 pytestmark = pytest.mark.integration
@@ -125,18 +125,18 @@ def test_withdraw_fees_recovers_exact_creation_stakes(factory, accounts):
 
 def test_lifecycle_to_pending_and_optionally_to_claim(factory, accounts):
     creator, alice, bob = accounts[0], accounts[1], accounts[2]
-    monocle = _new_monocle(factory, creator, "Does 2 + 2 equal 4?")
+    monocle = _new_monocle(factory, creator, "What is the speed of light in vacuum?")
 
-    _finalized(monocle.connect(bob).add_source(args=["https://en.wiktionary.org/wiki/2%2B2", "corroborating"]), value=1)
+    _finalized(monocle.connect(bob).add_source(args=["https://en.wikipedia.org/wiki/Metre", "corroborating"]), value=1)
     _finalized(
         monocle.connect(alice).submit_interpretation(
-            args=["The pages confirm 2 + 2 = 4.", json.dumps({"claims": ["2 + 2 equals 4"], "result": "4"})]
+            args=["Light in vacuum travels at exactly 299,792,458 m/s.", json.dumps({"claims": ["The speed of light in vacuum is exactly 299,792,458 metres per second"], "value_m_per_s": "299792458"})]
         ),
         value=2,
     )
     _finalized(
         monocle.connect(bob).submit_interpretation(
-            args=["The pages show 2 + 2 = 5.", json.dumps({"claims": ["2 + 2 equals 5"], "result": "5"})]
+            args=["Light in vacuum travels at about 150,000 km/s.", json.dumps({"claims": ["The speed of light in vacuum is about 150,000 kilometres per second"], "value_m_per_s": "150000000"})]
         ),
         value=2,
     )

@@ -19,7 +19,7 @@ Monocles. Nothing else. There is no pause switch.
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 import genlayer as gl
 from genlayer.storage import DynArray, TreeMap
@@ -41,16 +41,21 @@ MONOCLE_SALT_OFFSET = 2
 
 
 def _consensus_now() -> int:
-    raw = gl.message.raw["datetime"]
-    return int(datetime.fromisoformat(str(raw).replace("Z", "+00:00")).timestamp())
+    """Unix seconds of the transaction's consensus datetime (the same for
+    every validator), never the node's wall clock. Accepts a trailing "Z"
+    and treats a naive timestamp as UTC."""
+    stamp = str(gl.message.raw["datetime"]).strip()
+    if stamp.endswith(("Z", "z")):
+        stamp = stamp[:-1] + "+00:00"
+    moment = datetime.fromisoformat(stamp)
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return int(moment.timestamp())
 
 
 def _normalize_address(addr) -> str:
-    if isinstance(addr, Address):
-        return addr.as_hex.lower()
-    if not isinstance(addr, str):
-        return ""
-    return addr.strip().lower()
+    text = addr.as_hex if isinstance(addr, Address) else addr
+    return text.strip().lower() if isinstance(text, str) else ""
 
 
 def _is_http_url(url) -> bool:

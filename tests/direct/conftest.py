@@ -13,6 +13,7 @@ Harness facts verified against genlayer-test 0.30.0rc2 + GenVM v0.6 RC:
     EmitInternalMessage so payout amounts can be asserted exactly.
 """
 
+import contextlib
 import json
 import os
 import sys
@@ -38,17 +39,14 @@ ARBITER_RE = r"challenge arbiter for MONOCLE"
 # releases API (which rate-limits and otherwise slows every deploy).
 os.environ.setdefault("GENVM_VERSION", "v0.6.0-rc5")
 
-_real_unlink = os.unlink
+if sys.platform == "win32":
+    # The direct loader removes its temp stdin file while it is still open,
+    # which Windows refuses. The leftover temp file is harmless.
+    def _tolerant_unlink(path, *args, _unlink=os.unlink, **kwargs):
+        with contextlib.suppress(PermissionError):
+            _unlink(path, *args, **kwargs)
 
-
-def _safe_unlink(path, *args, **kwargs):
-    try:
-        _real_unlink(path, *args, **kwargs)
-    except PermissionError:
-        pass
-
-
-os.unlink = _safe_unlink
+    os.unlink = _tolerant_unlink
 
 
 # ----------------------------------------------------------------------
