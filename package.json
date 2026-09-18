@@ -9,6 +9,7 @@
     "sdk/typescript"
   ],
   "scripts": {
+    "ci": "node scripts/ci.mjs",
     "lint:contracts": "genvm-lint check contracts/Monocle.py && genvm-lint check contracts/MonocleFactory.py && genvm-lint check contracts/MonocleReputation.py",
     "test:direct": "gltest tests/direct -v",
     "test:integration": "gltest tests/integration -v --network studio_devnet",
