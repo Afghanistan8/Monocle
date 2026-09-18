@@ -1,0 +1,30 @@
+{
+  "name": "monocle",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MONOCLE -- capital-backed, claim-level, challengeable interpretation engine on GenLayer (Studio Next / Consensus v0.6). Deploy scripts + TypeScript agent SDK. No frontend.",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "sdk/typescript"
+  ],
+  "scripts": {
+    "lint:contracts": "genvm-lint check contracts/Monocle.py && genvm-lint check contracts/MonocleFactory.py && genvm-lint check contracts/MonocleReputation.py",
+    "test:direct": "gltest tests/direct -v",
+    "test:integration": "gltest tests/integration -v --network studio_devnet",
+    "typecheck": "tsc -p tsconfig.json --noEmit && npm run typecheck --workspace=sdk/typescript",
+    "test:sdk": "npm run test --workspace=sdk/typescript",
+    "deploy": "tsx deploy/001_deploy_monocle_system.ts",
+    "deploy:studio-next": "tsx deploy/001_deploy_monocle_system.ts studio-next",
+    "deploy:localnet": "tsx deploy/001_deploy_monocle_system.ts localnet"
+  },
+  "dependencies": {
+    "ethers": "^6.13.5",
+    "genlayer-js": "2.0.0-rc.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

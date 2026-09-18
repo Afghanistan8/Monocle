@@ -1,0 +1,77 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+
+import { ExecutionResult, TransactionStatus } from "genlayer-js/types";
+import type { GenLayerTransaction, TransactionHash } from "genlayer-js/types";
+
+import { describeTransactionOutcome, MonocleTransactionError, waitFinalized } from "./finality.js";
+import { STUDIO_NEXT_CHAIN_ID, STUDIO_NEXT_RPC, studioNext, resolveNetwork } from "./networks.js";
+
+const tx = (statusName: string, txExecutionResultName?: string) =>
+  ({ statusName, txExecutionResultName }) as unknown as GenLayerTransaction;
+
+test("FINALIZED + FINISHED_WITH_RETURN is the only unconditional success", () => {
+  const out = describeTransactionOutcome(tx(TransactionStatus.FINALIZED, ExecutionResult.FINISHED_WITH_RETURN));
+  assert.equal(out.succeeded, true);
+  assert.equal(out.finalized, true);
+});
+
+test("ACCEPTED + FINISHED_WITH_ERROR is a failure (revert reported as success)", () => {
+  const out = describeTransactionOutcome(tx(TransactionStatus.ACCEPTED, ExecutionResult.FINISHED_WITH_ERROR), {
+    requireFinalized: false,
+  });
+  assert.equal(out.succeeded, false);
+  assert.match(out.reason ?? "", /reverted/);
+});
+
+test("FINALIZED + FINISHED_WITH_ERROR is still a failure", () => {
+  assert.equal(describeTransactionOutcome(tx(TransactionStatus.FINALIZED, ExecutionResult.FINISHED_WITH_ERROR)).succeeded, false);
+});
+
+test("missing or NOT_VOTED execution results are never defaulted to success", () => {
+  assert.equal(describeTransactionOutcome(tx(TransactionStatus.FINALIZED)).succeeded, false);
+  assert.equal(describeTransactionOutcome(tx(TransactionStatus.FINALIZED, ExecutionResult.NOT_VOTED)).succeeded, false);
+  assert.equal(describeTransactionOutcome(tx(TransactionStatus.FINALIZED, ExecutionResult.NONDET_DISAGREE)).succeeded, false);
+});
+
+test("ACCEPTED success is not enough when finality is required (default)", () => {
+  const accepted = tx(TransactionStatus.ACCEPTED, ExecutionResult.FINISHED_WITH_RETURN);
+  assert.equal(describeTransactionOutcome(accepted).succeeded, false);
+  assert.equal(describeTransactionOutcome(accepted, { requireFinalized: false }).succeeded, true);
+});
+
+test("failed terminal statuses are failures", () => {
+  for (const s of [TransactionStatus.UNDETERMINED, TransactionStatus.CANCELED, TransactionStatus.LEADER_TIMEOUT, TransactionStatus.VALIDATORS_TIMEOUT]) {
+    assert.equal(describeTransactionOutcome(tx(s, ExecutionResult.FINISHED_WITH_RETURN)).succeeded, false, s);
+  }
+});
+
+test("waitFinalized throws MonocleTransactionError on a reverted-but-finalized tx", async () => {
+  const client = {
+    waitForTransactionReceipt: async () => tx(TransactionStatus.FINALIZED, ExecutionResult.FINISHED_WITH_ERROR),
+  };
+  await assert.rejects(waitFinalized(client, "0x01" as TransactionHash), MonocleTransactionError);
+});
+
+test("waitFinalized asks the SDK for finalized receipts", async () => {
+  let seen: unknown;
+  const client = {
+    waitForTransactionReceipt: async (args: unknown) => {
+      seen = args;
+      return tx(TransactionStatus.FINALIZED, ExecutionResult.FINISHED_WITH_RETURN);
+    },
+  };
+  await waitFinalized(client, "0x01" as TransactionHash);
+  assert.equal((seen as { waitUntil: string }).waitUntil, "finalized");
+});
+
+test("Studio Next preset is chain 61997 on the canonical studio-dev RPC", () => {
+  assert.equal(studioNext.id, STUDIO_NEXT_CHAIN_ID);
+  assert.equal(studioNext.id, 61997);
+  assert.deepEqual(studioNext.rpcUrls.default.http, [STUDIO_NEXT_RPC]);
+  assert.equal(STUDIO_NEXT_RPC, "https://studio-dev.genlayer.com/api");
+  assert.equal(resolveNetwork(undefined).id, 61997);
+  assert.equal(resolveNetwork("localnet").id, 61127);
+  assert.throws(() => resolveNetwork("studionet"));
+  assert.throws(() => resolveNetwork("bradbury"));
+});
