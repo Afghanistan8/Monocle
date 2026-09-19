@@ -13,8 +13,10 @@ contracts read that output. A new round then opens, so the output keeps tracking
 Zero evidence, low confidence or an invalid verdict never move stake, and every round ends
 claimable.
 
-There is no frontend. This repository contains contracts, tests, a deploy script, TypeScript and
-Python agent SDKs, and docs.
+**Live site:** https://monocle-ten.vercel.app
+
+This repository contains the contracts, tests, a deploy script, TypeScript and Python agent SDKs,
+the web app (`frontend/`), and docs.
 
 ## What makes it different
 
@@ -55,6 +57,7 @@ tests/integration/  real-node lifecycle (skips cleanly without a node)
 deploy/             001_deploy_monocle_system.ts, networks.ts (Studio Next default)
 sdk/typescript/     @monocle/sdk: clients, strict finality, typed calls
 sdk/python/         monocle_sdk
+frontend/           Next.js web app: explore, create, submit/back, adjudicate, challenge, finalize, claim
 docs/               ARCHITECTURE, RESOLUTION_LOGIC, AGENT_SDK, AUDIT, STUDIO_NEXT, LIMITATIONS
 ```
 
@@ -150,6 +153,23 @@ and the script waits for FINALIZED with `FINISHED_WITH_RETURN`. It records the r
 | Chain ID | 61997 |
 | Explorer | https://explorer-studio-dev.genlayer.com |
 | Local | localnet, 61127 |
+
+## Web app
+
+`frontend/` is a Next.js app built on `@monocle/sdk`, so every write uses the same fee estimation
+and strict FINALIZED + `FINISHED_WITH_RETURN` checks as agents do. It connects any EVM browser
+wallet to Studio Next (it adds the network if needed).
+
+```bash
+npm run dev:web
+```
+
+The site needs a factory address. Set `NEXT_PUBLIC_MONOCLE_FACTORY` on the host (Vercel project
+settings) after deploying the contracts. Visitors can also paste one on the Explore page, which is
+stored per browser, since Studio Next can reset.
+
+Hosting on Vercel: project root directory `frontend`, install command `cd .. && npm install`
+(so the SDK workspace resolves), build command `npm run build`.
 
 ## Honest limits
 

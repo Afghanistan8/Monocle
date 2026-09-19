@@ -1,0 +1,11 @@
+# Upload only what the web build needs.
+/*
+!/frontend
+!/sdk
+!/package.json
+!/package-lock.json
+/frontend/.next
+/frontend/node_modules
+/sdk/typescript/node_modules
+/sdk/typescript/dist
+/sdk/python
