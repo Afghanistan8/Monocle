@@ -40,7 +40,7 @@ Never mix these with stable Studionet tooling.
 | genlayer-test (gltest) | `0.30.0rc2` | `pyproject.toml` |
 | genvm-linter | `0.11.1rc2` | `pyproject.toml` |
 | GenLayer CLI | `0.40.0-rc.3` (npm dist-tag `rc`) | install with `npm i -g genlayer@rc` |
-| GenVM runtime used by gltest | `v0.6.0-rc5` | `GENVM_VERSION` (conftest and CI) |
+| GenVM runtime used by gltest | `v0.6.0-rc5` | `GENVM_VERSION` (tests/direct/conftest.py) |
 
 ### Runner pin
 

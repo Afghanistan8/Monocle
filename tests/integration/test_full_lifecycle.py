@@ -6,7 +6,7 @@ chain 61997) or a local Studio (localnet, 61127).
     gltest tests/integration -v                       # localnet default
 
 The whole module skips cleanly when the configured RPC is unreachable, so
-`gltest tests/integration` is safe in CI without a node.
+`gltest tests/integration` is safe to run without a node.
 
 Every write that produces state other flows act on waits for FINALIZED.
 adjudicate/resolve raise consensus_max_rotations to 6 (see docs/STUDIO_NEXT.md).

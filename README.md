@@ -141,9 +141,6 @@ pip install ./sdk/python
 pytest sdk/python/tests -p no:gltest
 ```
 
-The GitHub Actions workflow (`.github/workflows/ci.yml`) runs these checks plus the web build on
-every push and pull request to `main` (and on demand).
-
 ## Deploy to Studio Next
 
 ```bash
