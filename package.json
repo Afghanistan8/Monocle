@@ -15,9 +15,9 @@
     "test:integration": "gltest tests/integration -v --network studio_devnet",
     "typecheck": "tsc -p tsconfig.json --noEmit && npm run typecheck --workspace=sdk/typescript",
     "test:sdk": "npm run test --workspace=sdk/typescript",
-    "deploy": "tsx deploy/001_deploy_monocle_system.ts",
-    "deploy:studio-next": "tsx deploy/001_deploy_monocle_system.ts studio-next",
-    "deploy:localnet": "tsx deploy/001_deploy_monocle_system.ts localnet",
+    "deploy": "tsx --env-file-if-exists=.env deploy/001_deploy_monocle_system.ts",
+    "deploy:studio-next": "tsx --env-file-if-exists=.env deploy/001_deploy_monocle_system.ts studio-next",
+    "deploy:localnet": "tsx --env-file-if-exists=.env deploy/001_deploy_monocle_system.ts localnet",
     "dev:web": "npm run dev --workspace=frontend",
     "build:web": "npm run build --workspace=frontend"
   },

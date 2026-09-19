@@ -1,0 +1,17 @@
+{
+  "studio-next": {
+    "network": "studio-next",
+    "chainId": 61997,
+    "factory": "0x63EF4632f1e8ED4621ed8758148dcB597805969F",
+    "reputation": "0x60F28e0126CB3Be8d6Bc780C06eE6848c7a2028e",
+    "sourcesHash": "93fe79a512ab01e8cc5e4cb7a7a0a2a9435ac840cd4897ddf8689925e0d0d6e6",
+    "deployTx": "0x624f352396ec70b798bac1505cc6b3391964ca46e424f80721a08a6b6e5e1771",
+    "deployedAt": "2026-09-19T08:00:01.077Z",
+    "config": {
+      "creationStake": "0",
+      "minInterpretationBond": "1000000000000000",
+      "minSourceBond": "100000000000000",
+      "minChallengeBond": "1000000000000000"
+    }
+  }
+}
