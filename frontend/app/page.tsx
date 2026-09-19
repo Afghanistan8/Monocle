@@ -2,6 +2,11 @@ import Link from "next/link";
 import Globe from "@/components/Globe";
 import LiveStats, { SeededMarketCard } from "@/components/LiveStats";
 import { HealthBar } from "@/components/Health";
+import { DEPLOYMENT } from "@/lib/deployment";
+import { formatWindow } from "@/lib/format";
+
+const WINDOW = DEPLOYMENT.challengeWindowSeconds;
+const WINDOW_TEXT = `${formatWindow(WINDOW)}${WINDOW < 3600 ? " on this deployment" : ""}`;
 
 const PHASES = [
   {
@@ -22,7 +27,7 @@ const PHASES = [
   {
     n: "04",
     title: "Challenge",
-    body: "A verdict stays pending for an hour. A bonded challenger can pit an alternative against it before anything is final.",
+    body: `A verdict stays pending for ${WINDOW_TEXT}. A bonded challenger can pit an alternative against it before anything is final.`,
   },
   {
     n: "05",

@@ -2,7 +2,7 @@
   "name": "monocle",
   "version": "0.1.0",
   "private": true,
-  "description": "MONOCLE -- capital-backed, claim-level, challengeable interpretation engine on GenLayer (Studio Next / Consensus v0.6). Deploy scripts + TypeScript agent SDK. No frontend.",
+  "description": "MONOCLE -- capital-backed, claim-level, challengeable interpretation engine on GenLayer (Studio Next / Consensus v0.6). Contracts, deploy scripts, TypeScript + Python agent SDKs, and the Next.js web app.",
   "license": "MIT",
   "type": "module",
   "workspaces": [

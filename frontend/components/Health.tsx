@@ -195,16 +195,14 @@ export function HealthBar({ showSetup = true }: { showSetup?: boolean }) {
           </div>
         </div>
       )}
-      {!address && (
-        <div className="hint">
+      <div className="hint">
           {!hasWallet && "To transact you need MetaMask or any EIP-1193 browser wallet. "}
           Need test GEN? Open{" "}
           <a href={STUDIO_URL} target="_blank" rel="noreferrer">
             studio-next.genlayer.com ↗
           </a>
           , use the built-in faucet for your wallet address, then come back.
-        </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -60,10 +60,4 @@ export function setFactoryAddress(value: string): void {
   }
 }
 
-export function formatWindow(seconds: number | string | undefined): string {
-  const s = Number(seconds ?? 0);
-  if (!s) return "—";
-  if (s % 3600 === 0) return `${s / 3600}h`;
-  if (s % 60 === 0) return `${s / 60}m`;
-  return `${s}s`;
-}
+export { formatWindow } from "./format";

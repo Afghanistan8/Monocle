@@ -55,3 +55,12 @@ export function errorText(err: unknown): string {
   if (err instanceof Error) return err.message.replace(/^UserError\((['"])(.*)\1\)$/, "$2");
   return String(err);
 }
+
+/** Seconds -> "3m" / "1h" / "45s". */
+export function formatWindow(seconds: number | string | undefined): string {
+  const s = Number(seconds ?? 0);
+  if (!s) return "—";
+  if (s % 3600 === 0) return `${s / 3600}h`;
+  if (s % 60 === 0) return `${s / 60}m`;
+  return `${s}s`;
+}

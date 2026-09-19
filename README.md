@@ -141,6 +141,9 @@ pip install ./sdk/python
 pytest sdk/python/tests -p no:gltest
 ```
 
+CI (`.github/workflows/ci.yml`) runs genvm-lint and gltest direct, plus the TypeScript typecheck and
+SDK tests, on every push and pull request to `main`. It needs no live Studio node.
+
 ## Deploy to Studio Next
 
 ```bash
