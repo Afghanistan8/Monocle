@@ -9,7 +9,7 @@ export {
   studioNext,
   type NetworkName,
 } from "./networks.js";
-export { createReadClient, createWriteClient, read, writeAndWait, type MonocleClient, type WriteOptions } from "./client.js";
+export { createReadClient, createWriteClient, estimateFees, isRateLimitError, isTransientRpcError, read, writeAndWait, type MonocleClient, type WriteOptions } from "./client.js";
 export {
   describeTransactionOutcome,
   MonocleTransactionError,

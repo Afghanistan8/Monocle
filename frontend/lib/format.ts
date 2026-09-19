@@ -52,8 +52,14 @@ export function percent(score: string | undefined): string {
 }
 
 export function errorText(err: unknown): string {
-  if (err instanceof Error) return err.message.replace(/^UserError\((['"])(.*)\1\)$/, "$2");
-  return String(err);
+  const raw = err instanceof Error ? err.message : String(err);
+  if (/rate limit/i.test(raw)) {
+    return "The public Studio Next RPC rate limit was reached for your connection (500 requests per hour). Wait a while and refresh.";
+  }
+  if (/server busy|execution slots occupied/i.test(raw)) {
+    return "Studio Next is busy right now (all execution slots occupied). Try again in a moment.";
+  }
+  return raw.replace(/^UserError\((['"])(.*)\1\)$/, "$2");
 }
 
 /** Seconds -> "3m" / "1h" / "45s". */

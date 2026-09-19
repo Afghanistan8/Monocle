@@ -105,3 +105,29 @@ test("fee estimation prefers the per-call simulation when it works", async () =>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   assert.deepEqual(await estimateFees(client as any, "0x0000000000000000000000000000000000000001", "claim", ["1"], 0n), { feeValue: 7n });
 });
+
+test("read retries 'server busy' but never retries a rate limit", async () => {
+  const { read } = await import("./client.js");
+  let calls = 0;
+  const busy = {
+    readContract: async () => {
+      calls += 1;
+      if (calls < 3) throw new Error("Server busy: all 8 execution slots occupied, retry later");
+      return "ok";
+    },
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  assert.equal(await read(busy as any, "0x0000000000000000000000000000000000000001", "x", [], { delayMs: 1 }), "ok");
+  assert.equal(calls, 3);
+
+  let limited = 0;
+  const rate = {
+    readContract: async () => {
+      limited += 1;
+      throw new Error("Rate limit exceeded: 500 requests per hour");
+    },
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await assert.rejects(read(rate as any, "0x0000000000000000000000000000000000000001", "x", [], { delayMs: 1 }), /Rate limit/);
+  assert.equal(limited, 1);
+});

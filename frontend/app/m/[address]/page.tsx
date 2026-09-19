@@ -68,11 +68,20 @@ export default function MonoclePage() {
     }
   }, [readCalls]);
 
+  // The public RPC allows ~500 requests/hour per visitor and one refresh is
+  // six reads, so poll gently: only while visible, faster only while a
+  // verdict is time-sensitive.
+  const liveStatus = data?.round.status ?? "";
   useEffect(() => {
     void load();
-    const id = setInterval(() => void load(), 20_000);
-    return () => clearInterval(id);
   }, [load]);
+  useEffect(() => {
+    const hot = ["decided_pending", "challenged", "resolving", "adjudicating"].includes(liveStatus);
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, hot ? 60_000 : 300_000);
+    return () => clearInterval(id);
+  }, [load, liveStatus]);
 
   const act = (label: string, fn: (m: MonocleCalls) => Promise<unknown>, explain?: () => Promise<string>) => {
     if (!writeCalls) return;
@@ -110,7 +119,16 @@ export default function MonoclePage() {
   if (!data) {
     return (
       <div className="container page">
-        {error ? <div className="notice error">Could not load this Monocle: {error}</div> : <Skeleton lines={5} />}
+        {error ? (
+          <div className="stack">
+            <div className="notice error">Could not load this Monocle: {error}</div>
+            <button className="btn small" style={{ alignSelf: "flex-start" }} onClick={() => void load()}>
+              Try again
+            </button>
+          </div>
+        ) : (
+          <Skeleton lines={5} />
+        )}
       </div>
     );
   }
@@ -150,10 +168,20 @@ export default function MonoclePage() {
             )}
           </div>
         </div>
-        <Link href="/explore" className="btn small">
-          ← All Monocles
-        </Link>
+        <div className="row">
+          <button className="btn small" onClick={() => void load()}>
+            Refresh
+          </button>
+          <Link href="/explore" className="btn small">
+            ← All Monocles
+          </Link>
+        </div>
       </div>
+      {error && (
+        <div className="notice error small" style={{ marginBottom: 12 }}>
+          Refresh failed (showing last loaded data): {error}
+        </div>
+      )}
 
       <TxNotice phase={tx.phase} message={tx.message} />
       {tx.message && <div style={{ height: 12 }} />}

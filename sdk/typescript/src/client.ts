@@ -86,6 +86,35 @@ export async function writeAndWait(
   return { hash, transaction };
 }
 
-export async function read<T>(client: MonocleClient, address: Address, functionName: string, args: CalldataEncodable[] = []): Promise<T> {
-  return (await client.readContract({ address, functionName, args, jsonSafeReturn: true })) as T;
+/** Studio Next's public RPC: "Server busy: all N execution slots occupied". */
+export function isTransientRpcError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /server busy|execution slots occupied/i.test(msg);
+}
+
+/** Per-visitor quota on the public RPC (e.g. "Rate limit exceeded: 500 requests per hour"). */
+export function isRateLimitError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /rate limit|too many requests|429/i.test(msg);
+}
+
+/**
+ * View call. Retries only "server busy" (transient, clears in seconds).
+ * A rate-limit error is never retried: retrying spends more of the quota.
+ */
+export async function read<T>(
+  client: MonocleClient,
+  address: Address,
+  functionName: string,
+  args: CalldataEncodable[] = [],
+  { retries = 2, delayMs = 1500 }: { retries?: number; delayMs?: number } = {},
+): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return (await client.readContract({ address, functionName, args, jsonSafeReturn: true })) as T;
+    } catch (err) {
+      if (attempt >= retries || !isTransientRpcError(err) || isRateLimitError(err)) throw err;
+      await new Promise((r) => setTimeout(r, delayMs * (attempt + 1)));
+    }
+  }
 }

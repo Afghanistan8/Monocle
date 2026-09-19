@@ -149,6 +149,7 @@ last error. Use it, plus `npm run check:studio-next`, to diagnose.
 | "No browser wallet" | No injected EIP-1193 provider | Install MetaMask or any EIP-1193 wallet |
 | Write fails with "…FINISHED_WITH_ERROR" | The contract reverted (for example bond too low, round not open, window still open) | Read the reason shown. It is never shown as success |
 | Adjudicate spins for minutes | Every validator re-fetches every source and re-runs the LLM; leaders may rotate (up to 6) | Wait. The result is then stated explicitly: decided (pending), inconclusive (refunds), or unchanged (refunds) |
+| "rate limit was reached … 500 requests per hour" | The public Studio Next RPC limits each visitor (IP) to ~500 requests/hour; it also answers "Server busy: all 8 execution slots occupied" under load | Wait and refresh. The app reads sparingly: the health check runs once per page load, and the market page polls only while visible (60 s while a verdict is time-sensitive, else 5 min). "Server busy" is retried; a rate limit is never retried |
 | Wallet has no GEN | New account | Open https://studio-next.genlayer.com, use the built-in faucet for the address, come back |
 | Reputation address has no code right after a deploy | Its deploy is an internal message that runs after the factory finalizes | The deploy script polls for up to 2 minutes; otherwise rerun `npm run check:studio-next` shortly |
 
@@ -165,6 +166,24 @@ Two Studio Next facts that affect tooling:
 * The demo deployment uses a **180-second** challenge window, set per factory by
   `CHALLENGE_WINDOW_SECONDS` at deploy time and passed to every Monocle it creates. Existing
   Monocles keep the window they were created with. Production deployments should use 3600.
+
+## Public app verification
+
+Live host https://monocle-ten.vercel.app, production deployment of `main` at `ee2fa5b`
+(Vercel: root directory `frontend`, install `cd .. && npm install`, build `npm run build`).
+Checked from a cold browser (localStorage and sessionStorage cleared) and with raw `curl`.
+
+| Time (UTC) | Check | Result |
+| --- | --- | --- |
+| 2026-09-19 08:57 | `/create` creation stake | Server HTML: "loading…" (never "—"); hydrated: **"0 GEN"**, plus "Challenge window on this deployment: 3m (demo)." |
+| 2026-09-19 08:57 | Home health line | **"RPC ok"**, factory `0x6e9b…f48e` "code ok", **"1 Monocle"**; phase 04 reads "pending for 3m on this deployment"; stats label **"Chain ID"** (the old "Studio Next chain" label is gone) |
+| 2026-09-19 08:57 | Seeded market card on Home and Explore | Links to `/m/0xCa8298520a4b5dF9040325D9cF45000D910D04Bb`; Explore lists "What is the speed of light in vacuum?", no read error |
+| 2026-09-19 08:46 | `/m/0xCa82…` market page | Full render: title, "Round 2 · OPEN", "DEMO WINDOW: 3M", live output **FINAL** (99%), round 1 settled |
+| 2026-09-19 08:57 | `/m/0xCa82…` market page (repeat) | **Clear read error, not a blank page**: "Rate limit exceeded: 500 requests per hour". The verification runs had used this machine's RPC quota. This led to the gentler polling and the explicit rate-limit message now in the app |
+
+Deploy scripts do not update the site automatically: after any redeploy run `npm run sync:frontend`,
+commit `frontend/lib/deployment.ts`, and `vercel deploy --prod` (the Vercel project is not linked
+to GitHub, so a push alone does not rebuild the site).
 
 ## Quick start
 
