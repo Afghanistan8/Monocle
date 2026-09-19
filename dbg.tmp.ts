@@ -1,0 +1,15 @@
+import { createWriteClient, describeTransactionOutcome, HEAVY_CONSENSUS_ROTATIONS } from "./sdk/typescript/src/index.js";
+const c = createWriteClient({ account: process.env.PRIVATE_KEY as `0x${string}` });
+const addr = "0xCa8298520a4b5dF9040325D9cF45000D910D04Bb" as const;
+const fees = await c.estimateTransactionFees();
+const hash = await c.writeContract({ address: addr, functionName: "finalize", args: ["1"], value: 0n, fees });
+console.log("tx", hash);
+const tx = await c.waitForTransactionReceipt({ hash, waitUntil: "finalized", fullTransaction: true, interval: 4000, retries: 200 });
+const o = describeTransactionOutcome(tx);
+console.log("outcome", JSON.stringify(o));
+const anyTx = tx as any;
+const lr = anyTx.consensus_data?.leader_receipt ?? anyTx.consensusData?.leaderReceipt;
+const r0 = Array.isArray(lr) ? lr[0] : lr;
+console.log("leader result", JSON.stringify(r0?.result ?? r0?.execution_result ?? "").slice(0, 400));
+console.log("genvm stderr", String(r0?.genvm_result?.stderr ?? r0?.genvmResult?.stderr ?? "").slice(-600));
+console.log("keys", Object.keys(anyTx).join(","));

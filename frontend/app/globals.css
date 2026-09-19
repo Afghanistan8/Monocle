@@ -818,3 +818,85 @@ a.card:hover {
     animation: none;
   }
 }
+
+/* ---------------------------------------------------------------- health */
+
+.health {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-2);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.health-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.health a {
+  color: var(--text);
+}
+
+.hdot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--faint);
+  flex: none;
+}
+
+.hdot.ok {
+  background: var(--ok);
+}
+
+.hdot.bad {
+  background: var(--bad);
+}
+
+.faint {
+  color: var(--faint);
+}
+
+.linkish {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--mono);
+  font-size: inherit;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.net-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.net-badge.bad {
+  color: var(--bad);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--mono);
+}
+
+@media (max-width: 560px) {
+  .net-badge {
+    display: none;
+  }
+}

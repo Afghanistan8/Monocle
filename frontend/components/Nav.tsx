@@ -17,7 +17,7 @@ const LINKS = [
 
 export default function Nav() {
   const pathname = usePathname();
-  const { address, connect, disconnect, connecting } = useWallet();
+  const { address, connect, disconnect, connecting, wrongNetwork, switchNetwork } = useWallet();
   const [open, setOpen] = useState(false);
 
   return (
@@ -62,6 +62,17 @@ export default function Nav() {
               <path d="m20 20-3.5-3.5" />
             </svg>
           </Link>
+          {address &&
+            (wrongNetwork ? (
+              <button className="net-badge bad" onClick={() => void switchNetwork()} title="Switch to GenLayer Studio Next">
+                Wrong network
+              </button>
+            ) : (
+              <span className="net-badge">
+                <span className="dot ok" style={{ width: 6, height: 6 }} />
+                Studio Next · 61997
+              </span>
+            ))}
           {address ? (
             <button className="pill" onClick={disconnect} title="Disconnect">
               <span className="dot ok" />

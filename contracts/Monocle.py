@@ -78,7 +78,11 @@ CONFIDENCE_THRESHOLD = 0.62
 CORROBORATION_MIN_SOURCES = 2
 
 ROUND_TIMEOUT_SECONDS = 86400
+# Default challenge window. Each Monocle stores its own window, set at
+# construction (the factory passes its deployment-wide value).
 CHALLENGE_WINDOW_SECONDS = 3600
+MIN_CHALLENGE_WINDOW_SECONDS = 60
+MAX_CHALLENGE_WINDOW_SECONDS = 7 * 86400
 # A challenge nobody manages to resolve (e.g. validators keep disagreeing)
 # must not strand the round: after this, finalize() lets the original
 # pending winner stand and refunds the challenger's bond.
@@ -938,6 +942,7 @@ class Monocle(gl.contract.Contract):
     min_interpretation_bond: u256
     min_source_bond: u256
     min_challenge_bond: u256
+    challenge_window: u256
 
     # Ordered normalized source URLs; details in source_records.
     sources: DynArray[str]
@@ -998,6 +1003,7 @@ class Monocle(gl.contract.Contract):
         min_interpretation_bond: int,
         min_source_bond: int,
         min_challenge_bond: int,
+        challenge_window_seconds: int,
         creator: str,
     ):
         # Every constraint that matters is enforced here, not only in the
@@ -1027,6 +1033,15 @@ class Monocle(gl.contract.Contract):
         ):
             if not isinstance(value, int) or isinstance(value, bool) or value < 1:
                 raise gl.vm.UserError(f"{name} must be a positive integer (wei).")
+        if (
+            not isinstance(challenge_window_seconds, int)
+            or isinstance(challenge_window_seconds, bool)
+            or not MIN_CHALLENGE_WINDOW_SECONDS <= challenge_window_seconds <= MAX_CHALLENGE_WINDOW_SECONDS
+        ):
+            raise gl.vm.UserError(
+                f"challenge_window_seconds must be between {MIN_CHALLENGE_WINDOW_SECONDS} and "
+                f"{MAX_CHALLENGE_WINDOW_SECONDS}."
+            )
 
         now = _consensus_now()
         sender = gl.message.sender_address
@@ -1055,6 +1070,7 @@ class Monocle(gl.contract.Contract):
         self.min_interpretation_bond = u256(min_interpretation_bond)
         self.min_source_bond = u256(min_source_bond)
         self.min_challenge_bond = u256(min_challenge_bond)
+        self.challenge_window = u256(challenge_window_seconds)
 
         creator_hex = self.creator.as_hex
         for url in normalized:
@@ -1539,7 +1555,7 @@ class Monocle(gl.contract.Contract):
         meta = self._round_meta(round_str)
         meta["pending_winner"] = winner_id
         meta["decided_at"] = str(now)
-        meta["challenge_deadline"] = str(now + CHALLENGE_WINDOW_SECONDS)
+        meta["challenge_deadline"] = str(now + int(self.challenge_window))
         self._save_round_meta(round_str, meta)
         self.round_status[round_str] = ROUND_DECIDED_PENDING
         self._log(self._log_entry(round_str, winner_id, confidence, len(candidates), now, ROUND_DECIDED_PENDING))
@@ -2050,10 +2066,11 @@ Respond with ONLY one JSON object; numbers MUST be quoted strings:
             "min_interpretation_bond": str(int(self.min_interpretation_bond)),
             "min_source_bond": str(int(self.min_source_bond)),
             "min_challenge_bond": str(int(self.min_challenge_bond)),
+            "challenge_window_seconds": str(int(self.challenge_window)),
             "constants": {
                 "confidence_threshold": str(CONFIDENCE_THRESHOLD),
                 "corroboration_min_sources": CORROBORATION_MIN_SOURCES,
-                "challenge_window_seconds": CHALLENGE_WINDOW_SECONDS,
+                "challenge_window_seconds": int(self.challenge_window),
                 "close_timelock_seconds": CLOSE_TIMELOCK_SECONDS,
                 "round_timeout_seconds": ROUND_TIMEOUT_SECONDS,
                 "max_sources": MAX_SOURCES,

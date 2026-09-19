@@ -75,3 +75,33 @@ test("Studio Next preset is chain 61997 on the canonical studio-dev RPC", () => 
   assert.throws(() => resolveNetwork("studionet"));
   assert.throws(() => resolveNetwork("bradbury"));
 });
+
+test("fee estimation falls back to the generic estimate when simulation fails", async () => {
+  const { estimateFees } = await import("./client.js");
+  let generic = 0;
+  const client = {
+    estimateTransactionFeesForWrite: async () => {
+      throw new Error("sim_estimateTransactionFees: execution failed");
+    },
+    estimateTransactionFees: async () => {
+      generic += 1;
+      return { feeValue: 1n };
+    },
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fees = await estimateFees(client as any, "0x0000000000000000000000000000000000000001", "finalize", ["1"], 0n);
+  assert.equal(generic, 1);
+  assert.deepEqual(fees, { feeValue: 1n });
+});
+
+test("fee estimation prefers the per-call simulation when it works", async () => {
+  const { estimateFees } = await import("./client.js");
+  const client = {
+    estimateTransactionFeesForWrite: async () => ({ feeValue: 7n }),
+    estimateTransactionFees: async () => {
+      throw new Error("should not be called");
+    },
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  assert.deepEqual(await estimateFees(client as any, "0x0000000000000000000000000000000000000001", "claim", ["1"], 0n), { feeValue: 7n });
+});

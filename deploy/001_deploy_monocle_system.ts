@@ -27,6 +27,7 @@ import type { TransactionHash } from "genlayer-js/types";
 
 import { waitFinalized } from "../sdk/typescript/src/finality.js";
 import { resolveNetwork } from "./networks.js";
+import { writeFrontendDeployment } from "./write_frontend_deployment.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CONTRACTS = join(ROOT, "contracts");
@@ -76,18 +77,24 @@ async function main() {
     minInterpretationBond: bigintEnv("MIN_INTERPRETATION_BOND_WEI", 10n ** 15n),
     minSourceBond: bigintEnv("MIN_SOURCE_BOND_WEI", 10n ** 14n),
     minChallengeBond: bigintEnv("MIN_CHALLENGE_BOND_WEI", 10n ** 15n),
+    // Seconds a verdict stays challengeable, for every Monocle this factory
+    // creates. 3600 for real use; the public Studio Next demo uses 180.
+    challengeWindowSeconds: bigintEnv("CHALLENGE_WINDOW_SECONDS", 3600n),
   };
+  const configRecord = Object.fromEntries(Object.entries(config).map(([k, v]) => [k, v.toString()]));
 
   const account = createAccount(await resolvePrivateKey());
   const client = createClient({ chain, account });
 
   const records = readRecords();
   const previous = records[networkName];
-  if (previous && previous.sourcesHash === sourcesHash && !process.env.FORCE_REDEPLOY) {
+  const sameConfig = previous && JSON.stringify(previous.config) === JSON.stringify(configRecord);
+  if (previous && previous.sourcesHash === sourcesHash && sameConfig && !process.env.FORCE_REDEPLOY) {
     const code = await client.getContractCode(previous.factory).catch(() => "");
     if (code && code.length > 0) {
-      console.log(`MonocleFactory already deployed on ${chain.name} at ${previous.factory} with identical sources; nothing to do.`);
+      console.log(`MonocleFactory already deployed on ${chain.name} at ${previous.factory} with identical sources and config; nothing to do.`);
       console.log("Set FORCE_REDEPLOY=1 to deploy a fresh system anyway.");
+      writeFrontendDeployment(networkName);
       return;
     }
     console.log(`Recorded factory ${previous.factory} has no code (Studio Next reset?). Redeploying.`);
@@ -96,7 +103,7 @@ async function main() {
   console.log(`Deploying MONOCLE to ${chain.name} (chain ${chain.id}) as ${account.address}`);
   console.log(
     `  creation stake ${config.creationStake} wei, bonds: interpretation ${config.minInterpretationBond}, ` +
-      `source ${config.minSourceBond}, challenge ${config.minChallengeBond}`,
+      `source ${config.minSourceBond}, challenge ${config.minChallengeBond}, challenge window ${config.challengeWindowSeconds}s`,
   );
 
   // v0.6: every deploy/write carries a quoted fee distribution. The factory
@@ -111,6 +118,7 @@ async function main() {
       config.minInterpretationBond,
       config.minSourceBond,
       config.minChallengeBond,
+      config.challengeWindowSeconds,
     ],
     fees,
   })) as TransactionHash;
@@ -122,12 +130,19 @@ async function main() {
   const factory = (anyTx.txDataDecoded?.contractAddress ?? anyTx.contractAddress ?? anyTx.to_address) as `0x${string}`;
   if (!factory) throw new Error(`Deploy finalized but no contract address in receipt: ${JSON.stringify(anyTx)}`);
 
+  // The reputation contract is deployed by an internal message that executes
+  // after the factory's transaction finalizes, so it can lag. Poll for it.
   const reputation = (await client.readContract({ address: factory, functionName: "get_reputation_address", args: [] })) as string;
-  const reputationCode = reputation ? await client.getContractCode(reputation as `0x${string}`).catch(() => "") : "";
+  let reputationCode = "";
+  for (let attempt = 0; attempt < 24 && reputation && !reputationCode; attempt++) {
+    reputationCode = await client.getContractCode(reputation as `0x${string}`).catch(() => "");
+    if (!reputationCode) await new Promise((r) => setTimeout(r, 5000));
+  }
   if (!reputationCode) {
     console.warn(
-      `Warning: MonocleReputation at ${reputation || "(none)"} has no code yet. Internal deploy messages execute ` +
-        "after the parent finalizes; re-check shortly. If it never appears, the constructor's message budget was too low.",
+      `Warning: MonocleReputation at ${reputation || "(none)"} still has no code after 2 minutes. Its deploy is an ` +
+        "internal message that runs after the factory finalizes; run `npm run check:studio-next` again shortly. " +
+        "If it never appears, the constructor's message budget was too low: redeploy with FORCE_REDEPLOY=1.",
     );
   }
 
@@ -139,15 +154,17 @@ async function main() {
     sourcesHash,
     deployTx: hash,
     deployedAt: new Date().toISOString(),
-    config: Object.fromEntries(Object.entries(config).map(([k, v]) => [k, v.toString()])),
+    config: configRecord,
   };
   writeFileSync(RECORD_PATH, JSON.stringify(records, null, 2) + "\n");
+  writeFrontendDeployment(networkName);
 
   console.log(`\nMonocleFactory:     ${factory}`);
-  console.log(`MonocleReputation:  ${reputation}`);
+  console.log(`MonocleReputation:  ${reputation}${reputationCode ? "" : " (code pending)"}`);
   const explorer = chain.blockExplorers?.default?.url;
   if (explorer) console.log(`Explorer:           ${explorer}/address/${factory}`);
-  console.log(`Recorded in deploy/deployments.json under "${networkName}".`);
+  console.log(`Recorded in deploy/deployments.json and frontend/lib/deployment.ts ("${networkName}").`);
+  console.log("Next: rebuild the site (vercel deploy --prod), and update NEXT_PUBLIC_MONOCLE_FACTORY if you set it.");
 }
 
 main().catch((err) => {

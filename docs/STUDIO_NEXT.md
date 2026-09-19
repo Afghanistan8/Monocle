@@ -132,6 +132,40 @@ guaranteed**. Contracts, balances and history can disappear on a reset. The depl
 `FORCE_REDEPLOY=1` always deploys. Agents should resolve the factory address from their own
 config or `deployments.json`, never hard-code it.
 
+## Public app runbook
+
+The public site (https://monocle-ten.vercel.app) reads Studio Next directly from the browser. Every
+page shows a health line: RPC, chain id, wallet network, factory address and code, Monocle count,
+last error. Use it, plus `npm run check:studio-next`, to diagnose.
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Health line: "RPC down" | `studio-dev.genlayer.com` unreachable or down | Wait; nothing to fix in the app. Reads and writes both need the RPC |
+| "factory … no code" or `check:studio-next` reports code MISSING | Studio Next was reset, or the site points at an old factory | `CHALLENGE_WINDOW_SECONDS=180 npm run deploy:studio-next`, then `npm run seed:studio-next`, commit `deploy/deployments.json` + `frontend/lib/deployment.ts`, update `NEXT_PUBLIC_MONOCLE_FACTORY` on Vercel if set, `vercel deploy --prod` |
+| Right factory in `deployments.json`, but the site shows the old one | Site not rebuilt, a stale `NEXT_PUBLIC_MONOCLE_FACTORY`, or a stale per-browser override | Rebuild; fix the env var; click "Reset to site default" in the factory box |
+| Create shows "unavailable" for the creation stake | `get_creation_stake` failed (RPC or dead factory) | Same as the two rows above. A numeric stake (e.g. "0 GEN") means the read worked |
+| Explore shows a red "Could not read the Monocle list" | Factory read threw. This is not an empty list | Check the health line; the seeded market card is shown as a fallback |
+| Wallet badge: "Wrong network" | Wallet not on 61997 | Click it (or "Switch to Studio Next"); the app adds the network if the wallet lacks it |
+| "No browser wallet" | No injected EIP-1193 provider | Install MetaMask or any EIP-1193 wallet |
+| Write fails with "…FINISHED_WITH_ERROR" | The contract reverted (for example bond too low, round not open, window still open) | Read the reason shown. It is never shown as success |
+| Adjudicate spins for minutes | Every validator re-fetches every source and re-runs the LLM; leaders may rotate (up to 6) | Wait. The result is then stated explicitly: decided (pending), inconclusive (refunds), or unchanged (refunds) |
+| Wallet has no GEN | New account | Open https://studio-next.genlayer.com, use the built-in faucet for the address, come back |
+| Reputation address has no code right after a deploy | Its deploy is an internal message that runs after the factory finalizes | The deploy script polls for up to 2 minutes; otherwise rerun `npm run check:studio-next` shortly |
+
+Two Studio Next facts that affect tooling:
+
+* Studio Next's simulation endpoints (`sim_call`, `sim_estimateTransactionFees`) can run at a
+  stale timestamp. Time-gated writes such as `finalize()` then fail in simulation ("execution
+  failed") while succeeding on chain. The SDK's `estimateFees` falls back to the generic v0.6
+  estimate when the per-call simulation fails; a real revert still comes back as
+  `FINISHED_WITH_ERROR` and is rejected. Verified live: the seeded market's finalize failed eight
+  simulations after its deadline, then finalized on the first real send.
+* `eth_getCode` returns empty for GenLayer contracts. Use `client.getContractCode(address)`
+  (`gen_getContractCode`) to check whether a contract exists.
+* The demo deployment uses a **180-second** challenge window, set per factory by
+  `CHALLENGE_WINDOW_SECONDS` at deploy time and passed to every Monocle it creates. Existing
+  Monocles keep the window they were created with. Production deployments should use 3600.
+
 ## Quick start
 
 ```bash

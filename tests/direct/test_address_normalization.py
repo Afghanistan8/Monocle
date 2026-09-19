@@ -81,7 +81,7 @@ def test_factory_creator_filter_and_owner_check_are_case_insensitive():
     owner, alice = create_test_addresses(2)
     with vm.activate():
         vm.sender = owner
-        f = deploy(vm, FACTORY_PATH, MONOCLE_PATH.read_text(encoding="utf-8"), "", 0, 10, 5, 20)
+        f = deploy(vm, FACTORY_PATH, MONOCLE_PATH.read_text(encoding="utf-8"), "", 0, 10, 5, 20, 3600)
         vm.sender = alice
         addr = f.create_monocle(["https://example.com/a", "https://example.org/b"], "market", "T", "D", "")
         for lookup in _variants(alice):

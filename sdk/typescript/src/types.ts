@@ -185,6 +185,8 @@ export interface MonocleInfo {
   min_interpretation_bond: string;
   min_source_bond: string;
   min_challenge_bond: string;
+  /** Seconds a decided verdict stays challengeable (deployment-wide, set by the factory). */
+  challenge_window_seconds: string;
   constants: Record<string, string | number>;
 }
 
@@ -237,6 +239,7 @@ export interface MonocleMeta {
   min_interpretation_bond: string;
   min_source_bond: string;
   min_challenge_bond: string;
+  challenge_window_seconds: string;
 }
 
 export interface Page<T> {

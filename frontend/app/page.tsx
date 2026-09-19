@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Globe from "@/components/Globe";
-import LiveStats from "@/components/LiveStats";
+import LiveStats, { SeededMarketCard } from "@/components/LiveStats";
+import { HealthBar } from "@/components/Health";
 
 const PHASES = [
   {
@@ -57,6 +58,10 @@ export default function Home() {
             <Link href="/create" className="btn">
               Open a Monocle
             </Link>
+          </div>
+          <div style={{ maxWidth: 760, margin: "36px auto 0", textAlign: "left" }} className="stack">
+            <HealthBar showSetup={false} />
+            <SeededMarketCard />
           </div>
         </div>
         <div className="side-index" aria-hidden>

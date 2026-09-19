@@ -15,7 +15,7 @@ import {
 } from "@monocle/sdk";
 import { useWallet } from "@/lib/wallet";
 import { useTx } from "@/lib/useTx";
-import { isAddress } from "@/lib/config";
+import { formatWindow, isAddress } from "@/lib/config";
 import { countdown, errorText, formatGen, fromUnix, parseGen, percent, short } from "@/lib/format";
 import { FinalityBadge, Skeleton, StatusBadge, TxNotice, WalletGate } from "@/components/Bits";
 
@@ -74,9 +74,29 @@ export default function MonoclePage() {
     return () => clearInterval(id);
   }, [load]);
 
-  const act = (label: string, fn: (m: MonocleCalls) => Promise<unknown>) => {
+  const act = (label: string, fn: (m: MonocleCalls) => Promise<unknown>, explain?: () => Promise<string>) => {
     if (!writeCalls) return;
-    void tx.run(label, () => fn(writeCalls), () => void load());
+    void tx.run(label, () => fn(writeCalls), async () => {
+      await load();
+      return explain ? explain() : undefined;
+    });
+  };
+
+  /** After adjudicate: say exactly what the round became. */
+  const explainRound = (round: string) => async () => {
+    if (!readCalls) return "";
+    const r = await readCalls.getRoundInfo(round);
+    const rec = r.reasoning as Partial<AdjudicationRecord>;
+    switch (r.status) {
+      case "decided_pending":
+        return `Round ${round} is DECIDED (pending): winner ${r.pending_winner} at ${percent(rec.confidence)} confidence. It becomes final after the challenge window unless challenged.`;
+      case "inconclusive":
+        return `Round ${round} is INCONCLUSIVE (${rec.decision ?? "no decision"}${rec.reason ? `: ${rec.reason}` : ""}). Nothing moved; every backer can claim a full refund. A new round is open.`;
+      case "unchanged":
+        return `Round ${round} is UNCHANGED: the evidence matches the last final snapshot and nothing new was submitted. Full refunds; the live output stays.`;
+      default:
+        return `Round ${round} status: ${r.status}.`;
+    }
   };
 
   if (!valid) {
@@ -122,6 +142,13 @@ export default function MonoclePage() {
           <div className="small muted mono-break">
             {address} · creator {short(info.creator)}
           </div>
+          <div className="small" style={{ marginTop: 6 }}>
+            {Number(info.challenge_window_seconds) < 3600 ? (
+              <span className="badge pending">Demo window: {formatWindow(info.challenge_window_seconds)} on this deployment</span>
+            ) : (
+              <span className="badge">Challenge window {formatWindow(info.challenge_window_seconds)}</span>
+            )}
+          </div>
         </div>
         <Link href="/explore" className="btn small">
           ← All Monocles
@@ -166,7 +193,7 @@ export default function MonoclePage() {
                 <button
                   className="btn primary"
                   disabled={tx.busy || interpretations.length === 0 || info.status === "closed"}
-                  onClick={() => act("Adjudicate", (m) => m.adjudicate())}
+                  onClick={() => act("Adjudicate", (m) => m.adjudicate(), explainRound(info.current_round))}
                 >
                   Adjudicate round {info.current_round}
                 </button>
@@ -564,7 +591,10 @@ function ClaimCard(props: {
         >
           Claim round {roundInput}
         </button>
-        <span className="hint">Winners are paid pro-rata; inconclusive, unchanged and cancelled rounds refund in full.</span>
+        <span className="hint">
+          Finalized → Settle → Claim. Inconclusive / cancelled / unchanged → Claim refund directly. Winners are paid
+          pro-rata; losers can claim 0 to close out.
+        </span>
       </WalletGate>
     </div>
   );

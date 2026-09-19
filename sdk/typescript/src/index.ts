@@ -20,4 +20,5 @@ export {
 } from "./finality.js";
 export { MonocleCalls, type SourceRole } from "./monocle-calls.js";
 export { FactoryCalls, ReputationCalls, type CreateMonocleArgs } from "./factory-calls.js";
+export { deploymentDefaults, renderDeploymentModule, type DeploymentDefaults, type SeededMarket } from "./deployments.js";
 export type * from "./types.js";

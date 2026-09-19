@@ -4,6 +4,7 @@ import "./globals.css";
 import Nav from "@/components/Nav";
 import { Footer } from "@/components/Bits";
 import { WalletProvider } from "@/lib/wallet";
+import { HealthProvider } from "@/components/Health";
 
 const mono = JetBrains_Mono({
   subsets: ["latin"],
@@ -30,9 +31,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={mono.variable}>
       <body>
         <WalletProvider>
-          <Nav />
-          <main>{children}</main>
-          <Footer />
+          <HealthProvider>
+            <Nav />
+            <main>{children}</main>
+            <Footer />
+          </HealthProvider>
         </WalletProvider>
       </body>
     </html>

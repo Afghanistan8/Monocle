@@ -19,7 +19,10 @@
     "deploy:studio-next": "tsx --env-file-if-exists=.env deploy/001_deploy_monocle_system.ts studio-next",
     "deploy:localnet": "tsx --env-file-if-exists=.env deploy/001_deploy_monocle_system.ts localnet",
     "dev:web": "npm run dev --workspace=frontend",
-    "build:web": "npm run build --workspace=frontend"
+    "build:web": "npm run build --workspace=frontend",
+    "sync:frontend": "tsx deploy/write_frontend_deployment.ts",
+    "check:studio-next": "tsx deploy/check_studio_next.ts studio-next",
+    "seed:studio-next": "tsx --env-file-if-exists=.env deploy/002_open_test_market.ts studio-next --full"
   },
   "dependencies": {
     "ethers": "^6.13.5",

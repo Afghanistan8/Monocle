@@ -15,11 +15,11 @@ from conftest import FACTORY_PATH, MONOCLE_PATH, REPUTATION_PATH, deploy, instal
 SOURCES = ["https://example.com/feed", "https://example.org/feed"]
 
 
-def _factory(vm, owner, creation_stake=0, with_reputation=True, bonds=(10, 5, 20)):
+def _factory(vm, owner, creation_stake=0, with_reputation=True, bonds=(10, 5, 20), window=3600):
     vm.sender = owner
     vm.value = 0
     rep_code = REPUTATION_PATH.read_text(encoding="utf-8") if with_reputation else ""
-    return deploy(vm, FACTORY_PATH, MONOCLE_PATH.read_text(encoding="utf-8"), rep_code, creation_stake, *bonds)
+    return deploy(vm, FACTORY_PATH, MONOCLE_PATH.read_text(encoding="utf-8"), rep_code, creation_stake, *bonds, window)
 
 
 def _create(f, vm, sender, value=0, sources=None, itype="market", title="Title", desc="Desc", schema=""):
@@ -42,7 +42,12 @@ def test_factory_deploys_with_owner_stake_bonds_and_reputation():
         assert f.get_collected_fees() == "0"
         assert f.get_residual_fees() == "0"
         assert f.get_owner().lower() == key(owner)
-        assert f.get_bond_config() == {"min_interpretation_bond": "10", "min_source_bond": "5", "min_challenge_bond": "20"}
+        assert f.get_bond_config() == {
+            "min_interpretation_bond": "10",
+            "min_source_bond": "5",
+            "min_challenge_bond": "20",
+            "challenge_window_seconds": "3600",
+        }
         rep = f.get_reputation_address()
         assert rep.startswith("0x") and len(rep) == 42
         assert len(rec.deploys) == 1
@@ -64,11 +69,11 @@ def test_factory_requires_monocle_code_and_valid_config():
     with vm.activate():
         vm.sender = owner
         with vm.expect_revert("Missing Monocle contract source"):
-            deploy(vm, FACTORY_PATH, "", "", 0, 10, 5, 20)
+            deploy(vm, FACTORY_PATH, "", "", 0, 10, 5, 20, 3600)
         with vm.expect_revert("creation_stake"):
-            deploy(vm, FACTORY_PATH, "code", "", -1, 10, 5, 20)
+            deploy(vm, FACTORY_PATH, "code", "", -1, 10, 5, 20, 3600)
         with vm.expect_revert("min_source_bond"):
-            deploy(vm, FACTORY_PATH, "code", "", 0, 10, 0, 20)
+            deploy(vm, FACTORY_PATH, "code", "", 0, 10, 0, 20, 3600)
 
 
 def test_create_rejects_insufficient_stake():
@@ -130,8 +135,8 @@ def test_create_registers_metadata_and_deploys_child_with_real_creator():
         # Deploy message: args carry the REAL creator and the bond config.
         (dep,) = rec.deploys
         args = dep["calldata"]["args"]
-        assert args[5:8] == [10, 5, 20]
-        assert args[8].lower() == key(alice)
+        assert args[5:9] == [10, 5, 20, 3600]
+        assert args[9].lower() == key(alice)
         assert dep["salt_nonce"] == 2  # salt 1 is the reputation contract
         assert addr.lower() != f.get_reputation_address().lower()
 

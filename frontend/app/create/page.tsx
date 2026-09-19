@@ -6,7 +6,10 @@ import { FactoryCalls } from "@monocle/sdk";
 import { useWallet } from "@/lib/wallet";
 import { useTx } from "@/lib/useTx";
 import { formatGen } from "@/lib/format";
-import { FactorySetup, TxNotice, WalletGate, useFactory } from "@/components/Bits";
+import { TxNotice, WalletGate, useFactory } from "@/components/Bits";
+import { HealthBar } from "@/components/Health";
+import { errorText } from "@/lib/format";
+import { formatWindow } from "@/lib/config";
 
 function parseSchema(text: string): Record<string, string> | undefined {
   const entries = text
@@ -24,9 +27,11 @@ function parseSchema(text: string): Record<string, string> | undefined {
 export default function CreatePage() {
   const router = useRouter();
   const { reader, writer } = useWallet();
-  const { factory, ready, update } = useFactory();
+  const { factory, health } = useFactory();
   const tx = useTx();
   const [stake, setStake] = useState<string | null>(null);
+  const [stakeError, setStakeError] = useState<string | null>(null);
+  const [challengeWindow, setChallengeWindow] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
     type: "market",
@@ -37,11 +42,20 @@ export default function CreatePage() {
 
   useEffect(() => {
     if (!factory) return;
-    new FactoryCalls(reader, factory)
-      .getCreationStake()
-      .then(setStake)
-      .catch(() => setStake(null));
-  }, [factory, reader]);
+    const f = new FactoryCalls(reader, factory);
+    f.getCreationStake()
+      .then((v) => {
+        setStake(v);
+        setStakeError(null);
+      })
+      .catch((err) => {
+        setStake(null);
+        setStakeError(errorText(err));
+      });
+    f.getBondConfig()
+      .then((c) => setChallengeWindow(c.challenge_window_seconds ?? null))
+      .catch(() => setChallengeWindow(null));
+  }, [factory, reader, health.factoryHasCode]);
 
   const sources = form.sources
     .split("\n")
@@ -79,7 +93,9 @@ export default function CreatePage() {
         </div>
       </div>
 
-      {ready && !factory && <FactorySetup current={null} onSave={update} />}
+      <div style={{ marginBottom: 18 }}>
+        <HealthBar />
+      </div>
 
       <div className="two-col">
         <div className="card">
@@ -113,10 +129,19 @@ export default function CreatePage() {
         <div className="stack">
           <div className="card stack">
             <div className="label">Creation stake</div>
-            <div style={{ fontSize: 22, fontWeight: 800 }}>{stake === null ? "—" : formatGen(stake)}</div>
+            <div style={{ fontSize: 22, fontWeight: 800 }}>
+              {stake !== null ? formatGen(stake) : stakeError ? "unavailable" : "loading…"}
+            </div>
+            {stakeError && <div className="notice error small">Could not read the creation stake: {stakeError}</div>}
             <p className="muted small" style={{ margin: 0, lineHeight: 1.6 }}>
               Charged once by the factory. Anything you send above it is refunded in the same transaction.
             </p>
+            {challengeWindow && (
+              <p className="muted small" style={{ margin: 0 }}>
+                Challenge window on this deployment: <strong>{formatWindow(challengeWindow)}</strong>
+                {Number(challengeWindow) < 3600 ? " (demo)" : ""}.
+              </p>
+            )}
           </div>
           <div className="card stack">
             <WalletGate action="open a Monocle">

@@ -40,6 +40,28 @@ export interface WriteOptions {
 }
 
 /**
+ * Fee estimate for one write. Prefers a simulation of this exact call (it
+ * sizes internal-message budgets for payouts/deploys). Studio Next simulates
+ * at a stale timestamp, so time-gated calls such as finalize() can fail in
+ * simulation while succeeding on chain; then fall back to the generic v0.6
+ * estimate and let consensus decide. A genuine revert still surfaces as
+ * FINISHED_WITH_ERROR and is rejected by the strict outcome check.
+ */
+export async function estimateFees(
+  client: MonocleClient,
+  address: Address,
+  functionName: string,
+  args: CalldataEncodable[],
+  value: bigint,
+) {
+  try {
+    return await client.estimateTransactionFeesForWrite({ address, functionName, args, value });
+  } catch {
+    return await client.estimateTransactionFees();
+  }
+}
+
+/**
  * Every write: SDK fee estimation from a simulation of this exact call
  * (includes internal-message allocations for payouts/deploys), then submit,
  * then wait and apply the strict outcome check.
@@ -51,7 +73,7 @@ export async function writeAndWait(
   args: CalldataEncodable[],
   { value = 0n, consensusMaxRotations, requireFinalized = true }: WriteOptions = {},
 ) {
-  const fees = await client.estimateTransactionFeesForWrite({ address, functionName, args, value });
+  const fees = await estimateFees(client, address, functionName, args, value);
   const hash = (await client.writeContract({
     address,
     functionName,

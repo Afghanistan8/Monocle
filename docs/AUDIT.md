@@ -10,8 +10,8 @@ surface of MONOCLE's own features. Each finding names:
 Status of the pass:
 
 * `genvm-lint check` is clean on all three contracts.
-* `gltest tests/direct`: **206 passed**.
-* SDK unit tests: **9 TypeScript, 5 Python**, all passing.
+* `gltest tests/direct`: **212 passed**.
+* SDK unit tests: **13 TypeScript, 5 Python**, all passing.
 
 ## A. Known GenLayer failure classes
 

@@ -12,11 +12,13 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --import tsx --test src/finality.test.ts"
+    "test": "node --import tsx --test src/finality.test.ts src/deployments.test.ts"
   },
   "dependencies": {
     "genlayer-js": "2.0.0-rc.1"

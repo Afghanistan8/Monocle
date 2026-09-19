@@ -243,6 +243,7 @@ def deploy_monocle(
     schema_json="",
     bonds=BONDS,
     creator_arg="",
+    challenge_window=3600,
 ):
     vm.sender = creator
     vm.value = 0
@@ -255,6 +256,7 @@ def deploy_monocle(
         description,
         schema_json,
         *bonds,
+        challenge_window,
         creator_arg,
     )
 

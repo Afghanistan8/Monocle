@@ -96,7 +96,8 @@ roll-ups are still those of the original adjudication. They are labelled with
   ([STUDIO_NEXT.md](STUDIO_NEXT.md#resets)). Treat every address as ephemeral.
 * **The RC SDKs and tooling change.** Several harness gaps are documented in
   [STUDIO_NEXT.md](STUDIO_NEXT.md#runner-pin).
-* **Integration was not run live for this build.** The code is verified by 206 direct and
-  in-process multi-contract tests, plus SDK unit tests, plus an integration suite that runs
-  against a node when one is configured. A live run needs a funded Studio Next account, and
-  finishing the post-challenge-window path takes more than an hour (`MONOCLE_INTEGRATION_LONG=1`).
+* **Live runs.** The full lifecycle has been run on Studio Next against the deployed factory:
+  create, two submissions, a real multi-validator adjudication of two live Wikipedia pages (correct
+  winner, 99% confidence), finalize after the 3-minute demo window, settle, claim. Transaction
+  hashes are in `deploy/deployments.json`. The challenge path (challenge, resolve) and close path
+  have only been exercised in direct-mode and in-process multi-contract tests, not live.

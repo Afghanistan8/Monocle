@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import { GITHUB_URL, getFactoryAddress, isAddress, setFactoryAddress } from "@/lib/config";
+import { useState, type ReactNode } from "react";
+import { DEPLOY_COMMAND, GITHUB_URL, STUDIO_URL, isAddress } from "@/lib/config";
 import { useWallet } from "@/lib/wallet";
 import type { TxPhase } from "@/lib/useTx";
+import { useHealth } from "./Health";
 
 export function Footer() {
   return (
@@ -50,36 +51,55 @@ export function StatusBadge({ status }: { status: string }) {
   return <span className={`badge ${tone}`}>{status.replace("_", " ") || "unknown"}</span>;
 }
 
+export function FaucetHint() {
+  return (
+    <span className="hint">
+      Need test GEN? Open{" "}
+      <a href={STUDIO_URL} target="_blank" rel="noreferrer" style={{ color: "var(--text)" }}>
+        studio-next.genlayer.com ↗
+      </a>
+      , use the built-in faucet for your address, then come back.
+    </span>
+  );
+}
+
 export function WalletGate({ children, action = "transact" }: { children: ReactNode; action?: string }) {
-  const { address, connect, connecting, error, hasWallet } = useWallet();
-  if (address) return <>{children}</>;
+  const { address, connect, connecting, error, hasWallet, wrongNetwork, walletChainId, switchNetwork } = useWallet();
+  if (address && !wrongNetwork) return <>{children}</>;
+  if (address && wrongNetwork) {
+    return (
+      <div className="stack">
+        <div className="notice error">
+          Your wallet is on chain {walletChainId}. Switch to GenLayer Studio Next (61997) to {action}.
+        </div>
+        {error && <div className="notice error">{error}</div>}
+        <button className="btn primary" onClick={() => void switchNetwork()}>
+          Switch to Studio Next
+        </button>
+      </div>
+    );
+  }
+  if (!hasWallet) {
+    return <div className="hint">Browser wallet required to {action} (MetaMask or any EIP-1193 wallet).</div>;
+  }
   return (
     <div className="stack">
       <div className="notice">
-        Connect a wallet on GenLayer Studio Next to {action}.
-        {!hasWallet && " No browser wallet was detected."}
+        Connect a wallet on GenLayer Studio Next to {action}. You will be asked to add the network if it is missing.
       </div>
       {error && <div className="notice error">{error}</div>}
-      <button className="btn primary" onClick={connect} disabled={connecting}>
+      <button className="btn primary" onClick={() => void connect()} disabled={connecting}>
         {connecting ? "Connecting…" : "Connect wallet"}
       </button>
+      <FaucetHint />
     </div>
   );
 }
 
-/** Resolves the factory address; lets the visitor set one if none is configured. */
+/** Current factory from the shared health check (browser > env > deployment). */
 export function useFactory() {
-  const [factory, setFactory] = useState<`0x${string}` | null>(null);
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    setFactory(getFactoryAddress());
-    setReady(true);
-  }, []);
-  const update = (value: string) => {
-    setFactoryAddress(value);
-    setFactory(getFactoryAddress());
-  };
-  return { factory, ready, update };
+  const h = useHealth();
+  return { factory: h.factory, ready: !h.loading, update: h.setFactory, health: h };
 }
 
 export function FactorySetup({ onSave, current }: { onSave: (v: string) => void; current: string | null }) {
@@ -89,20 +109,20 @@ export function FactorySetup({ onSave, current }: { onSave: (v: string) => void;
     <div className="card stack">
       <div className="label">MonocleFactory address</div>
       <p className="muted small" style={{ margin: 0, lineHeight: 1.6 }}>
-        No factory is configured for this site yet. Deploy the system with <code>npm run deploy:studio-next</code>{" "}
-        and paste the factory address here, or set <code>NEXT_PUBLIC_MONOCLE_FACTORY</code> on the host. Studio Next can
-        reset, so this is stored per browser.
+        {current
+          ? "The configured factory is not answering on Studio Next (the network may have been reset)."
+          : "No factory is configured for this site."}{" "}
+        Paste a live factory address to use it in this browser, or redeploy with <code>{DEPLOY_COMMAND}</code> and rebuild
+        the site.
       </p>
       <input className="input" placeholder="0x…" value={value} onChange={(e) => setValue(e.target.value)} spellCheck={false} />
       <div className="row">
         <button className="btn small primary" disabled={!valid} onClick={() => onSave(value)}>
           Use this factory
         </button>
-        {current && (
-          <button className="btn small" onClick={() => onSave("")}>
-            Reset to default
-          </button>
-        )}
+        <button className="btn small" onClick={() => onSave("")}>
+          Reset to site default
+        </button>
       </div>
     </div>
   );

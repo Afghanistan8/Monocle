@@ -40,7 +40,7 @@ def sysm():
 def _factory(s, creation_stake=100):
     return s.deploy(
         FACTORY_PATH,
-        [MONOCLE_PATH.read_text(encoding="utf-8"), REPUTATION_PATH.read_text(encoding="utf-8"), creation_stake, 10, 5, 20],
+        [MONOCLE_PATH.read_text(encoding="utf-8"), REPUTATION_PATH.read_text(encoding="utf-8"), creation_stake, 10, 5, 20, 180],
         OWNER,
     )
 
@@ -65,6 +65,7 @@ def test_factory_deploys_real_children_with_real_creator(sysm):
     assert info["factory_address"].lower() == factory.lower()
     assert info["deployed_by_factory"] is True
     assert info["min_challenge_bond"] == "20"
+    assert info["challenge_window_seconds"] == "180"  # the factory's deployment-wide window
     assert s.view(factory, "get_collected_fees") == "100"
     assert s.paid_to(ALICE) == 30  # excess refund really emitted
     # The real creator (not the factory) can close it.
@@ -116,7 +117,7 @@ def test_reputation_rejects_monocle_not_registered_with_factory(sysm):
     s = sysm
     factory = _factory(s)
     rep = s.view(factory, "get_reputation_address")
-    rogue = s.deploy(MONOCLE_PATH, [list(SOURCES), "market", "Rogue", "", "", 10, 5, 20, ""], BOB)
+    rogue = s.deploy(MONOCLE_PATH, [list(SOURCES), "market", "Rogue", "", "", 10, 5, 20, 3600, ""], BOB)
     with pytest.raises(Exception, match="not registered"):
         s.call(rep, "record_round", rogue, "1", sender=BOB)
 

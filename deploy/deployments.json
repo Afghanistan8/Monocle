@@ -2,16 +2,28 @@
   "studio-next": {
     "network": "studio-next",
     "chainId": 61997,
-    "factory": "0x63EF4632f1e8ED4621ed8758148dcB597805969F",
-    "reputation": "0x60F28e0126CB3Be8d6Bc780C06eE6848c7a2028e",
-    "sourcesHash": "93fe79a512ab01e8cc5e4cb7a7a0a2a9435ac840cd4897ddf8689925e0d0d6e6",
-    "deployTx": "0x624f352396ec70b798bac1505cc6b3391964ca46e424f80721a08a6b6e5e1771",
-    "deployedAt": "2026-09-19T08:00:01.077Z",
+    "factory": "0x6e9bfAd92A1a34310c29ce099C3bc83E2bAef48e",
+    "reputation": "0x722261Db07AB7A28C7f50899E3083891F79003de",
+    "sourcesHash": "959a5ed8b4541566583aa2c21c260d3caad015785452032d7f8b47b41bfd92d5",
+    "deployTx": "0x011315aaa9adabafbeff4d03cc84e6e63d1980642fbee4c318302b1cca6dd221",
+    "deployedAt": "2026-09-19T08:20:58.981Z",
     "config": {
       "creationStake": "0",
       "minInterpretationBond": "1000000000000000",
       "minSourceBond": "100000000000000",
-      "minChallengeBond": "1000000000000000"
-    }
+      "minChallengeBond": "1000000000000000",
+      "challengeWindowSeconds": "180"
+    },
+    "testMonocle": "0xCa8298520a4b5dF9040325D9cF45000D910D04Bb",
+    "createTx": "0xab7c99707722812042ca8ee9f20b8f9141e5f06b5cb7cc9e5cd41b9fd6b4193e",
+    "submitTxs": [
+      "0x902502e36136a4099244c9a0ddf18047f3050914458e3a449ca1aa8f46fe0781",
+      "0x75f276e296686455b3328aaf65748577d81bc202263d0d1338fcb7e5ab006c48"
+    ],
+    "adjudicateTx": "0x165ef68fc88c809de5e135e50ba31eebf14c5d0422898664ea81df260c138519",
+    "roundStatus": "settled",
+    "liveUrl": "https://monocle-ten.vercel.app/m/0xCa8298520a4b5dF9040325D9cF45000D910D04Bb",
+    "finalizeClaimTx": "0xbb0529dfac0dc9bb24e2f0112b4c7be73211dae4fe189195b72b39a1dc9262a5",
+    "finalizeTx": "0x03384c6be440a8a8bfb2300d6f6700926862c9bd5962f8cc38035a25e1ae7a03"
   }
 }

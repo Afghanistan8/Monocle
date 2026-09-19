@@ -38,6 +38,8 @@ MAX_PAGE_LIMIT = 100
 # only -- not from code -- so salts must never collide across child kinds.
 REPUTATION_SALT = 1
 MONOCLE_SALT_OFFSET = 2
+MIN_CHALLENGE_WINDOW_SECONDS = 60
+MAX_CHALLENGE_WINDOW_SECONDS = 7 * 86400
 
 
 def _consensus_now() -> int:
@@ -75,6 +77,8 @@ class MonocleFactory(gl.contract.Contract):
     min_interpretation_bond: u256
     min_source_bond: u256
     min_challenge_bond: u256
+    # Passed to every Monocle this factory creates.
+    challenge_window_seconds: u256
     # Exactly creation_stake per create_monocle, never the overpayment.
     collected_fees: u256
     # Value received via receive_residual() (Monocle.flush_residual).
@@ -92,6 +96,7 @@ class MonocleFactory(gl.contract.Contract):
         min_interpretation_bond: int,
         min_source_bond: int,
         min_challenge_bond: int,
+        challenge_window_seconds: int,
     ):
         if not monocle_code:
             raise gl.vm.UserError("Missing Monocle contract source code.")
@@ -104,12 +109,22 @@ class MonocleFactory(gl.contract.Contract):
         ):
             if not isinstance(value, int) or isinstance(value, bool) or value < 1:
                 raise gl.vm.UserError(f"{name} must be a positive integer (wei).")
+        if (
+            not isinstance(challenge_window_seconds, int)
+            or isinstance(challenge_window_seconds, bool)
+            or not MIN_CHALLENGE_WINDOW_SECONDS <= challenge_window_seconds <= MAX_CHALLENGE_WINDOW_SECONDS
+        ):
+            raise gl.vm.UserError(
+                f"challenge_window_seconds must be between {MIN_CHALLENGE_WINDOW_SECONDS} and "
+                f"{MAX_CHALLENGE_WINDOW_SECONDS}."
+            )
         self.monocle_code = monocle_code
         self.creation_stake = u256(creation_stake)
         self.owner = gl.message.sender_address
         self.min_interpretation_bond = u256(min_interpretation_bond)
         self.min_source_bond = u256(min_source_bond)
         self.min_challenge_bond = u256(min_challenge_bond)
+        self.challenge_window_seconds = u256(challenge_window_seconds)
         self.collected_fees = u256(0)
         self.residual_fees = u256(0)
         self.reputation_address = ""
@@ -162,6 +177,7 @@ class MonocleFactory(gl.contract.Contract):
                 int(self.min_interpretation_bond),
                 int(self.min_source_bond),
                 int(self.min_challenge_bond),
+                int(self.challenge_window_seconds),
                 creator.as_hex,
             ],
             salt_nonce=u256(registered + MONOCLE_SALT_OFFSET),
@@ -190,6 +206,7 @@ class MonocleFactory(gl.contract.Contract):
                 "min_interpretation_bond": str(int(self.min_interpretation_bond)),
                 "min_source_bond": str(int(self.min_source_bond)),
                 "min_challenge_bond": str(int(self.min_challenge_bond)),
+                "challenge_window_seconds": str(int(self.challenge_window_seconds)),
             }
         )
         if excess > 0:
@@ -244,6 +261,7 @@ class MonocleFactory(gl.contract.Contract):
             "min_interpretation_bond": str(int(self.min_interpretation_bond)),
             "min_source_bond": str(int(self.min_source_bond)),
             "min_challenge_bond": str(int(self.min_challenge_bond)),
+            "challenge_window_seconds": str(int(self.challenge_window_seconds)),
         }
 
     @gl.public.view
